@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.DS_Store
+sample_fidelity_raw.csv
+.streamlit/secrets.toml
