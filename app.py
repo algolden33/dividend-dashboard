@@ -481,6 +481,21 @@ def render_upload_view() -> None:
                 key="csv_uploader",
             )
 
+            with st.expander("How do I get this CSV from Fidelity?"):
+                st.markdown(
+                    "**1.** Log in to your Fidelity account.\n\n"
+                    "**2.** Go to your portfolio and open the **Activity & Orders** tab.\n\n"
+                    "**3.** Click **More filters**.\n\n"
+                    "**4.** Under transaction type, check only **Dividends/Interest** "
+                    "and click **Apply**.\n\n"
+                    "**5.** Pick the time period you want to see "
+                    "(e.g. Year to date, Past year, Custom).\n\n"
+                    "**6.** Click the **download icon** in the top-right corner of the "
+                    "activity table — this saves the CSV.\n\n"
+                    "Then upload that file above. Use the longest time range you're "
+                    "comfortable with — more history makes the monthly chart more useful."
+                )
+
         if uploaded_file is not None:
             st.session_state.upload_csv_bytes = uploaded_file.getvalue()
             st.session_state.upload_csv_name = uploaded_file.name
