@@ -184,9 +184,19 @@ def _render_overview_tab(
     estimated_taxes,
     after_tax,
 ) -> None:
-    # Monthly average (works for any mode)
-    range_days = (end_date - start_date).days + 1
-    months_in_range = max(range_days / 30.44, 1)
+    # Monthly average (works for any mode) — count whole calendar months
+    # touched by the range so a payout on any day of a month counts as a full
+    # month, matching the bucketing used by build_monthly_frame.
+    months_in_range = max(
+        len(
+            pd.period_range(
+                pd.Timestamp(start_date).to_period("M"),
+                pd.Timestamp(end_date).to_period("M"),
+                freq="M",
+            )
+        ),
+        1,
+    )
     monthly_avg_after_tax = after_tax / months_in_range
 
     projection_line = ""
