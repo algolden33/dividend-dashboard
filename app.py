@@ -215,10 +215,17 @@ def _render_overview_tab(
         unsafe_allow_html=True,
     )
 
+    estimate_help = (
+        "Estimate using your selected federal rates. Each holding is classified "
+        "as qualified or ordinary from its description — unfamiliar securities "
+        "default to qualified. Tax-advantaged accounts (IRA, 401k, HSA) are not "
+        "taxed. Gross dividend totals are always exact."
+    )
+
     row = st.columns(3)
     row[0].metric("Total Dividends", money(total_dividends))
-    row[1].metric("Estimated Taxes", money(estimated_taxes))
-    row[2].metric("After-Tax Dividends", money(after_tax))
+    row[1].metric("Estimated Taxes", money(estimated_taxes), help=estimate_help)
+    row[2].metric("After-Tax Dividends", money(after_tax), help=estimate_help)
 
     st.divider()
 
