@@ -20,6 +20,20 @@ MONEY_MARKET_SYMBOLS = {
     "FNSXX", "FGRXX", "FGXXX", "FMPXX", "FTEXX",
 }
 
+# Substrings in the Account column that mark a tax-advantaged account.
+# Dividends in IRAs, 401ks, HSAs, 529s, etc. are tax-free (Roth) or
+# tax-deferred (Traditional) and shouldn't have estimated tax applied.
+TAX_ADVANTAGED_ACCOUNT_KEYWORDS = (
+    "IRA",
+    "ROTH",
+    "401",
+    "403",
+    "HSA",
+    "SEP",
+    "SIMPLE",
+    "529",
+)
+
 # Substrings in the security description that indicate ordinary-rate dividends:
 # bond funds, money market, REITs, floating-rate funds, etc. Matched
 # case-insensitively against the Description column.
@@ -137,9 +151,20 @@ def clean_fidelity_csv(
     out["tax_classification"] = [
         classify(s, n) for s, n in zip(out["symbol"], out["security_name"])
     ]
-    out["estimated_tax_rate"] = out["tax_classification"].map(
-        {"qualified": qualified_rate, "ordinary": ordinary_rate}
-    )
+
+    # Tax-advantaged accounts (IRA / 401k / HSA / 529 / etc.) owe no tax on
+    # dividends. Detect by scanning the raw Account column for keywords; the
+    # security's classification (qualified/ordinary) stays meaningful but the
+    # rate is zeroed for these rows.
+    account_names = div["Account"].fillna("").astype(str).str.upper()
+    is_tax_advantaged = account_names.apply(
+        lambda name: any(kw in name for kw in TAX_ADVANTAGED_ACCOUNT_KEYWORDS)
+    ).tolist()
+
+    out["estimated_tax_rate"] = [
+        0.0 if adv else (qualified_rate if cls == "qualified" else ordinary_rate)
+        for cls, adv in zip(out["tax_classification"], is_tax_advantaged)
+    ]
     out["estimated_tax_amount"] = (
         out["gross_dividend_amount"] * out["estimated_tax_rate"]
     ).round(2)
