@@ -25,6 +25,12 @@ def load_cleaned_csv(file_bytes: bytes) -> pd.DataFrame:
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    if "tax_advantaged" in df.columns:
+        df["tax_advantaged"] = df["tax_advantaged"].astype(str).str.lower().isin(
+            ("true", "1", "yes")
+        )
+    else:
+        df["tax_advantaged"] = False
     return df
 
 
@@ -283,6 +289,7 @@ def _render_holdings_tab(df_filtered, after_tax_total) -> None:
             after_tax=("estimated_after_tax_amount", "sum"),
             payouts=("event_id", "count"),
             classification=("tax_classification", "first"),
+            all_tax_advantaged=("tax_advantaged", "all"),
         )
         .reset_index()
         .sort_values("after_tax", ascending=False)
@@ -293,9 +300,10 @@ def _render_holdings_tab(df_filtered, after_tax_total) -> None:
         return
 
     holdings["share"] = holdings["after_tax"] / after_tax_total
-    holdings["tax_tag"] = holdings["classification"].str.lower().map(
-        lambda c: "Q" if c == "qualified" else "O"
-    )
+    holdings["tax_tag"] = [
+        "TF" if adv else ("Q" if cls.lower() == "qualified" else "O")
+        for cls, adv in zip(holdings["classification"], holdings["all_tax_advantaged"])
+    ]
 
     top = holdings.iloc[0]
     st.markdown(
@@ -370,7 +378,7 @@ def _render_holdings_tab(df_filtered, after_tax_total) -> None:
             "Tax": st.column_config.TextColumn(
                 "Tax",
                 width="small",
-                help="Q = Qualified (lower rate) · O = Ordinary (regular income rate)",
+                help="Q = Qualified · O = Ordinary · TF = Tax-free (held in IRA / 401k / HSA)",
             ),
         },
     )
@@ -383,9 +391,13 @@ def _render_holdings_tab(df_filtered, after_tax_total) -> None:
 def _render_events_tab(df_filtered) -> None:
     events = df_filtered.sort_values("event_date", ascending=False).copy()
     events["event_date"] = events["event_date"].dt.strftime("%b %d, %Y")
-    events["tax_classification"] = events["tax_classification"].str.lower().map(
-        lambda c: "Q" if c == "qualified" else "O"
-    )
+    events["tax_classification"] = [
+        "TF" if adv else ("Q" if cls == "qualified" else "O")
+        for cls, adv in zip(
+            events["tax_classification"].str.lower(),
+            events["tax_advantaged"],
+        )
+    ]
     display = events.rename(
         columns={
             "event_date": "Date",
@@ -409,7 +421,7 @@ def _render_events_tab(df_filtered) -> None:
             "Type": st.column_config.TextColumn(
                 "Type",
                 width="small",
-                help="Q = Qualified (lower rate) · O = Ordinary (regular income rate)",
+                help="Q = Qualified · O = Ordinary · TF = Tax-free (held in IRA / 401k / HSA)",
             ),
         },
     )

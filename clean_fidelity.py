@@ -62,6 +62,7 @@ CLEANED_COLUMNS = [
     "reinvestment_amount",
     "cash_paid_amount",
     "tax_classification",
+    "tax_advantaged",
     "estimated_tax_rate",
     "estimated_tax_amount",
     "estimated_after_tax_amount",
@@ -160,6 +161,7 @@ def clean_fidelity_csv(
     is_tax_advantaged = account_names.apply(
         lambda name: any(kw in name for kw in TAX_ADVANTAGED_ACCOUNT_KEYWORDS)
     ).tolist()
+    out["tax_advantaged"] = is_tax_advantaged
 
     out["estimated_tax_rate"] = [
         0.0 if adv else (qualified_rate if cls == "qualified" else ordinary_rate)
