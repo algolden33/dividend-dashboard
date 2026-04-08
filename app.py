@@ -583,6 +583,24 @@ def render_upload_view() -> None:
                 help="The lower preferential rate for most US stock and ETF dividends. Most investors are at 15%.",
             )
 
+        current_rates = (ordinary_rate, qualified_rate)
+        both_selected = ordinary_rate is not None and qualified_rate is not None
+
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        clicked = st.button(
+            "Generate report",
+            type="primary",
+            use_container_width=True,
+            disabled=not both_selected,
+        )
+
+        if not both_selected:
+            st.markdown(
+                '<div style="text-align:center; font-size:12px; color:#64748b; '
+                'margin-top:6px;">Select both tax rates to continue</div>',
+                unsafe_allow_html=True,
+            )
+
         with st.expander("How do I pick my rates?"):
             st.markdown(
                 "**Ordinary income rate** — your normal federal tax bracket "
@@ -611,31 +629,11 @@ def render_upload_view() -> None:
                 "so the dashboard applies the right one automatically."
             )
 
-    # CTA block
-    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    with st.container(key="cta_block"):
-        current_rates = (ordinary_rate, qualified_rate)
-        both_selected = ordinary_rate is not None and qualified_rate is not None
-
-        clicked = st.button(
-            "Generate report",
-            type="primary",
-            use_container_width=True,
-            disabled=not both_selected,
-        )
-
-        if not both_selected:
-            st.markdown(
-                '<div style="text-align:center; font-size:12px; color:#64748b; '
-                'margin-top:6px;">Select both tax rates to continue</div>',
-                unsafe_allow_html=True,
-            )
-
-        st.markdown(
-            '<div style="text-align:center; font-size:12px; color:#64748b; '
-            'margin-top:14px;">🔒 Your CSV is processed in memory and never stored. Nothing is saved on the server.</div>',
-            unsafe_allow_html=True,
-        )
+    st.markdown(
+        '<div style="text-align:center; font-size:12px; color:#64748b; '
+        'margin-top:14px;">🔒 Your CSV is processed in memory and never stored. Nothing is saved on the server.</div>',
+        unsafe_allow_html=True,
+    )
 
     if clicked:
         try:
